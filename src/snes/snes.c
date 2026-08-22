@@ -521,11 +521,13 @@ static void snes_writeReg(Snes* snes, uint16_t adr, uint8_t val) {
         snes->inIrq = false;
         snes->cpu->irqWanted = false;
       }
-      /* SNES quirk: enabling NMI during active vblank asserts NMI immediately.
-       * Some games poll RDNMI/enable timing during bootstrap and can deadloop
-       * if this edge is delayed to the next frame. */
-      if (!oldNmiEnabled && snes->nmiEnabled && snes->inVblank) {
-        snes->inNmi = true;
+      /* SNES quirk: enabling NMI during vblank can assert NMI immediately.
+       * Gate on the RDNMI latch (inNmi / $4210.7): if the game already
+       * acknowledged vblank by reading $4210, a later NMITIMEN 0→1 must not
+       * fire a second NMI in the same blank. Soul Blazer (France) does
+       * LDA $4210 / LDA #$A1 / STA $4200 every frame; an ungated edge gave
+       * two NMIs/frame and visible multi-Hz image jumps. */
+      if (!oldNmiEnabled && snes->nmiEnabled && snes->inVblank && snes->inNmi) {
         snes->cpu->nmiWanted = true;
       }
       /* Similar behavior for V-IRQ enable on the matching line (without H-IRQ). */

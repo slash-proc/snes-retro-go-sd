@@ -1,16 +1,18 @@
 # Changelog
 
-When you cut a release:
+## [Unreleased]
 
-1. Move items from `[Unreleased]` into a new `## [vX.Y.Z] - YYYY-MM-DD` section.
-2. Commit the changelog update.
-3. Push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
+### Added
 
-CI reads the matching section and uses it as the GitHub Release notes. Assets
-attached to the release:
+### Changed
 
-- `<binary>-<tag>.zip` — SD layout only (`cores/` + packed `.bin`)
-- `<binary>-<tag>-debug.zip` — ELF + linker map (use `arm-none-eabi-addr2line` for crash PC/LR → function/line)
+### Fixed
+
+- Double NMI each frame in Soul Blazer (France): `$4200` NMI enable during
+  vblank now requires the RDNMI latch still set, so `LDA $4210` / `STA $4200`
+  no longer fires a second NMI and the image no longer jumps several times
+  per second.
+
 
 ## [v0.0.2]
 
