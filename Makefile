@@ -155,7 +155,7 @@ pack: $(TARGET_BIN)
 	$(V)$(ECHO) [ PACK CORE ] $(PACKED_BIN) version=$(CORE_VERSION)
 	$(V)python3 $(PACK_CORE) \
 		--elf $(TARGET_ELF) --bin $(TARGET_BIN) \
-		--system-name "SNES" --dirname snes \
+		--system-name "Super Nintendo" --dirname snes \
 		--extensions "sfc smc fig swc" \
 		--core-name "lakesnes" \
 		--version "$(CORE_VERSION)" \
@@ -172,13 +172,17 @@ clean::
 #######################################
 # Docker
 #######################################
-.PHONY: docker docker_pull docker_shell print-PROJECT_KIND print-PACKED_BIN print-CORE_NAME print-DOCKER_IMAGE \
+.PHONY: docker docker_pull docker_shell print-PROJECT_KIND print-PACKED_BIN print-RO_BIN print-CORE_NAME print-DOCKER_IMAGE \
 	print-TARGET_ELF print-TARGET_MAP print-CORE_VERSION
 
 print-PROJECT_KIND:
 	@echo $(PROJECT_KIND)
 print-PACKED_BIN:
 	@echo $(PACKED_BIN)
+# The shared stage_release.py asks every project for RO_BIN: the extra
+# device file installed beside the packed binary. Empty here.
+print-RO_BIN:
+	@echo $(RO_BIN)
 print-CORE_NAME:
 	@echo $(CORE_NAME)
 print-DOCKER_IMAGE:
