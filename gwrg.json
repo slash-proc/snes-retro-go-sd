@@ -2,7 +2,12 @@
   "systems": {
     "snes": {
       "shortName": "SNES",
-      "compression": false
+      "compression": false,
+      "runtime": {
+        "$comment": "The port caps ordinary cart SRAM at 32 KiB and appends a 16-byte RTC block for SPC7110 cartridges.",
+        "savestate": { "supported": true },
+        "save": { "supported": true, "bytes": 32784 }
+      }
     }
   }
 }
