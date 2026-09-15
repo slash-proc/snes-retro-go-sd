@@ -51,16 +51,18 @@ Host uses the C interpreters (no Thumb-2 ASM). Scale with `HOST_SCALE=2`
 
 ## Controls (pause menu → Controls)
 
-Firmware: **GAME→START**, **TIME→SELECT**; on Zelda HW, phys Start/Select →
-**X/Y** inputs. Profiles (Auto picks Zelda or Mario via `get_ofw_is_mario()`):
+On Zelda HW, phys Start/Select feed **X/Y**. Auto picks Zelda (with L/R) or
+Mario via `get_ofw_is_mario()`.
 
-| G&W | SNES (Zelda) | SNES (Mario) |
-|-----|--------------|--------------|
-| B / A | B / A | B / A |
-| phys Select / Start | Y / X | — |
-| GAME / TIME | Start / Select | Start / Select |
-| GAME+B / GAME+A | L / R | L / R |
-| TIME+B / TIME+A | — | Y / X |
+| G&W | Zelda (défaut) | Simple | Mario |
+|-----|----------------|--------|-------|
+| B / A | B / A | B / A | B / A |
+| phys Select / Start | Y / X | Y / X | — |
+| TIME | Start | Start | Select |
+| GAME | *(modificateur)* | Select | Start |
+| GAME+TIME | Select | — | — |
+| GAME+B / GAME+A | L / R | — | L / R |
+| TIME+B / TIME+A | — | — | Y / X |
 
 ## Layout
 
