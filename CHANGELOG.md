@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.0.6] - 2026-09-16
+
+### Fixed
+
+- Added a faster Select-key profile without L/R button access.
+- Fixed key mapping and startup for Soul Blazer and Pilotwings.
+
 ## [v0.0.5] - 2026-09-13
 
 ### Changed
