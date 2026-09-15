@@ -1,10 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [v0.0.3]
 
 ### Added
 
+- Pause-menu **Controls** profiles (Auto / Zelda / Mario): natural face map;
+  GAME+A/B = L/R; on Mario HW, TIME+A/B = X/Y.
+
 ### Changed
+
+- Nothing.
 
 ### Fixed
 
@@ -12,21 +17,6 @@
   vblank now requires the RDNMI latch still set, so `LDA $4210` / `STA $4200`
   no longer fires a second NMI and the image no longer jumps several times
   per second.
-
-
-## [v0.0.2]
-
-### Added
-
-- Pause-menu **Controls** profiles (Auto / L/R / Face / Mario): GAME+A/B = L/R on Zelda; Mario layout for Mario HW.
-
-### Changed
-
-- Improved pad logo by eduardofilo
-
-### Fixed
-
-- Bad RDNMI bit 7 management, fix Soul Blazer France hang at start.
 
 
 ## [v0.0.1] - 2026-08-12

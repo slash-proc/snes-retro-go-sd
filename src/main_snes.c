@@ -320,23 +320,18 @@ static void SNES_ITCM_SCHED run_frame_events(Snes *s) {
  * 7=Right 8=A 9=X 10=L 11=R.
  *
  * Firmware odroid_input maps hardware as:
- *   START=GAME, SELECT=TIME, X=phys Start (Zelda), Y=phys Select (Zelda),
+ *   START=GAME, SELECT=TIME, X=phys Start (Zelda only), Y=phys Select (Zelda),
  *   VOLUME=PAUSE/SET. PAUSE combos stay with the launcher — ignore VOLUME.
  *
- * Profiles (pause menu "Controls"; Auto picks Shoulders on Zelda HW and
- * Mario on Mario HW via get_ofw_is_mario):
- *   Shoulders — zelda3-like: GAME+A/B = R/L, TIME=X, phys Select=Y,
- *               phys Start=Start, GAME+TIME=Select
- *   Face      — direct: GAME=Start, TIME=Select, phys Start/Select = X/Y
- *               (no L/R; good when X/Y must be one press)
- *   Mario     — smw Mario-like: A=B, B=X+Y, GAME+A=A, TIME=Select,
- *               GAME+TIME=Start (no L/R — GAME+A is already SNES A) */
+ * Profiles (pause menu "Controls"; Auto picks Zelda/Mario via get_ofw_is_mario):
+ *   Zelda — natural face map + GAME+A/B = R/L
+ *   Mario — same face map; TIME+A/B = X/Y (no phys Start/Select); GAME+A/B = R/L
+ */
 
 typedef enum {
   SNES_PAD_AUTO = 0,
-  SNES_PAD_SHOULDERS = 1,
-  SNES_PAD_FACE = 2,
-  SNES_PAD_MARIO = 3,
+  SNES_PAD_ZELDA = 1,
+  SNES_PAD_MARIO = 2,
   SNES_PAD_PROFILE_COUNT
 } snes_pad_profile_t;
 
@@ -346,7 +341,7 @@ static char snes_pad_map_value[12];
 static snes_pad_profile_t snes_pad_profile_effective(void)
 {
   if (snes_pad_profile == SNES_PAD_AUTO)
-    return get_ofw_is_mario() ? SNES_PAD_MARIO : SNES_PAD_SHOULDERS;
+    return get_ofw_is_mario() ? SNES_PAD_MARIO : SNES_PAD_ZELDA;
   return (snes_pad_profile_t)snes_pad_profile;
 }
 
@@ -368,46 +363,26 @@ static uint16_t read_snes_pad(odroid_gamepad_state_t *joy) {
   const bool b = joy->values[ODROID_INPUT_B] != 0;
   const bool phys_start = joy->values[ODROID_INPUT_X] != 0;  /* Zelda Start */
   const bool phys_select = joy->values[ODROID_INPUT_Y] != 0; /* Zelda Select */
+  const bool mario = (snes_pad_profile_effective() == SNES_PAD_MARIO);
 
-  switch (snes_pad_profile_effective()) {
-  case SNES_PAD_SHOULDERS:
-    /* GAME is a modifier only — never SNES Start by itself. */
-    if (game) {
-      if (a) s |= 1u << 11;       /* GAME+A = R */
-      if (b) s |= 1u << 10;       /* GAME+B = L */
-      if (time) s |= 1u << 2;     /* GAME+TIME = Select */
-    } else {
-      if (a) s |= 1u << 8;        /* A */
-      if (b) s |= 1u << 0;        /* B */
-      if (time) s |= 1u << 9;     /* TIME = X */
-      if (phys_select) s |= 1u << 1; /* phys Select = Y */
-      if (phys_start) s |= 1u << 3;  /* phys Start = Start */
-    }
-    break;
+  /* GAME+A/B = R/L (both profiles). When chorded, GAME is not Start. */
+  if (game && (a || b)) {
+    if (a) s |= 1u << 11; /* R */
+    if (b) s |= 1u << 10; /* L */
+  } else if (mario && time && (a || b)) {
+    /* Mario: no phys Start/Select → TIME+A/B = X/Y (TIME alone stays Select). */
+    if (a) s |= 1u << 9; /* X */
+    if (b) s |= 1u << 1; /* Y */
+  } else {
+    if (a) s |= 1u << 8; /* A */
+    if (b) s |= 1u << 0; /* B */
+    if (game) s |= 1u << 3; /* Start */
+    if (time) s |= 1u << 2; /* Select */
+  }
 
-  case SNES_PAD_MARIO:
-    if (game) {
-      if (a) s |= 1u << 8;        /* GAME+A = A */
-      if (time) s |= 1u << 3;     /* GAME+TIME = Start */
-    } else {
-      if (a) s |= 1u << 0;        /* A = B */
-      if (b) {                    /* B = X and Y (dash / item) */
-        s |= 1u << 9;
-        s |= 1u << 1;
-      }
-      if (time) s |= 1u << 2;     /* TIME = Select */
-    }
-    break;
-
-  case SNES_PAD_FACE:
-  default:
-    if (b) s |= 1u << 0;
+  if (!mario) {
     if (phys_select) s |= 1u << 1; /* Y */
-    if (time) s |= 1u << 2;        /* Select */
-    if (game) s |= 1u << 3;        /* Start */
-    if (a) s |= 1u << 8;
     if (phys_start) s |= 1u << 9;  /* X */
-    break;
   }
   return s;
 }
@@ -660,7 +635,7 @@ static bool snes_pad_port_cb(odroid_dialog_choice_t *option,
 
 static void snes_pad_map_label(char *dst, size_t dst_sz)
 {
-  static const char *const names[] = { "Auto", "L/R", "Face", "Mario" };
+  static const char *const names[] = { "Auto", "Zelda", "Mario" };
   int p = snes_pad_profile;
   if (p < 0 || p >= SNES_PAD_PROFILE_COUNT)
     p = SNES_PAD_AUTO;
@@ -1285,8 +1260,14 @@ void app_main_snes(uint8_t load_state, uint8_t start_paused, int8_t save_slot)
   snes_half_render = odroid_settings_app_int32_get("HalfRender", 1) != 0;
   snes_pad_port = odroid_settings_app_int32_get("PadPort", 0) != 0 ? 1 : 0;
   {
+    /* Migrate old PadMap: 0=Auto 1=Shoulders/Zelda 2=Face 3=Mario →
+     * 0=Auto 1=Zelda 2=Mario. */
     int pm = odroid_settings_app_int32_get("PadMap", SNES_PAD_AUTO);
-    if (pm < 0 || pm >= SNES_PAD_PROFILE_COUNT)
+    if (pm == 3)
+      pm = SNES_PAD_MARIO;
+    else if (pm == 2)
+      pm = SNES_PAD_ZELDA; /* former Face */
+    else if (pm < 0 || pm >= SNES_PAD_PROFILE_COUNT)
       pm = SNES_PAD_AUTO;
     snes_pad_profile = pm;
   }
